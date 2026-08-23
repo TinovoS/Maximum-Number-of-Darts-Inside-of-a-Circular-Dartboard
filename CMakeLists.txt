@@ -11,6 +11,8 @@ add_executable(MaxDartsInCircle
     src/main.cpp
     src/mainwindow.h
     src/mainwindow.cpp
+    src/algorithm.h
+    src/algorithm.cpp
 )
 
 target_link_libraries(MaxDartsInCircle PRIVATE Qt6::Widgets)
