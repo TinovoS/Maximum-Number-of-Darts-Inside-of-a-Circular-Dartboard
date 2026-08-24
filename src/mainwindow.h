@@ -21,6 +21,9 @@ private:
     Result result;
     bool solved = false;
 
+protected:
+    void paintEvent(QPaintEvent *event) override;
+
 private slots:
     void onSolve();
 

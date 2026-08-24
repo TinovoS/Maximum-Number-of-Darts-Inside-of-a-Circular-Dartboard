@@ -1,7 +1,7 @@
 #include "mainwindow.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-
+#include <QPainter>
 
 MainWindow::MainWindow(QWidget *parent)
     : QWidget(parent)
@@ -61,4 +61,66 @@ void MainWindow::onSolve()
         .arg(result.maxDarts)
         .arg(result.cx, 0, 'f', 2)
         .arg(result.cy, 0, 'f', 2));
+        
+    update();
+}
+
+void MainWindow::paintEvent(QPaintEvent *)
+{
+    if (!solved || darts.empty())
+        return;
+
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    QRectF drawArea(10, 60, width() - 20, height() - 80);
+    painter.fillRect(drawArea, Qt::white);
+
+    double minX = darts[0].x, maxX = darts[0].x;
+    double minY = darts[0].y, maxY = darts[0].y;
+    for (const auto &p : darts) {
+        minX = std::min(minX, p.x);
+        maxX = std::max(maxX, p.x);
+        minY = std::min(minY, p.y);
+        maxY = std::max(maxY, p.y);
+    }
+    minX = std::min(minX, result.cx - radius);
+    maxX = std::max(maxX, result.cx + radius);
+    minY = std::min(minY, result.cy - radius);
+    maxY = std::max(maxY, result.cy + radius);
+
+    double margin = 1.0;
+    minX -= margin; maxX += margin;
+    minY -= margin; maxY += margin;
+
+    double rangeX = maxX - minX;
+    double rangeY = maxY - minY;
+    double scale = std::min(drawArea.width() / rangeX, drawArea.height() / rangeY);
+
+    double offsetX = drawArea.left() + (drawArea.width() - rangeX * scale) / 2.0 - minX * scale;
+    double offsetY = drawArea.top() + (drawArea.height() + rangeY * scale) / 2.0 + minY * scale;
+
+    painter.setClipRect(drawArea);
+
+    painter.setPen(QPen(QColor(30, 100, 220), 2));
+    painter.setBrush(QBrush(QColor(30, 100, 220, 30)));
+    double circleScreenR = radius * scale;
+    double cx = offsetX + result.cx * scale;
+    double cy = offsetY - result.cy * scale;
+    painter.drawEllipse(QPointF(cx, cy), circleScreenR, circleScreenR);
+
+    int n = static_cast<int>(darts.size());
+    for (int i = 0; i < n; ++i) {
+        double sx = offsetX + darts[i].x * scale;
+        double sy = offsetY - darts[i].y * scale;
+
+        if (result.inside[i]) {
+            painter.setPen(QPen(QColor(0, 160, 0), 2));
+            painter.setBrush(QColor(0, 160, 0));
+        } else {
+            painter.setPen(QPen(QColor(200, 0, 0), 2));
+            painter.setBrush(QColor(200, 0, 0));
+        }
+        painter.drawEllipse(QPointF(sx, sy), 5, 5);
+    }
 }
