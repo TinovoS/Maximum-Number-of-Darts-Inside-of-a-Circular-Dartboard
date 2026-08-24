@@ -54,7 +54,7 @@ void MainWindow::onSolve()
 
     if (darts.empty()) return;
 
-    result = bruteForce(darts, radius);
+    result = angularSweep(darts, radius);
     solved = true;
 
     resultLabel->setText(QString("Max darts: %1 | Center: (%2, %3)")

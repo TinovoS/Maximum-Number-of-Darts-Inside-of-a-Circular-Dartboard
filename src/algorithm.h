@@ -15,6 +15,7 @@ struct Result {
 
 std::vector<Point> findCircleCenters(Point a, Point b, double r);
 int countInside(const std::vector<Point>& darts, double cx, double cy, double r);
+Result angularSweep(const std::vector<Point>& darts, double r);
 Result bruteForce(const std::vector<Point>& darts, double r);
 
 #endif // ALGORITHM_H
