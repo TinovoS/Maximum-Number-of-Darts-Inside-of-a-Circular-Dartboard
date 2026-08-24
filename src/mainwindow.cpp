@@ -1,7 +1,6 @@
 #include "mainwindow.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include "algorithm.h"
 
 
 MainWindow::MainWindow(QWidget *parent)
@@ -37,8 +36,29 @@ MainWindow::~MainWindow() {}
 
 void MainWindow::onSolve()
 {
-    std::vector<Point> darts;
-    double radius;
-    Result result;
-    bool solved = false;
+    darts.clear();
+    solved = false;
+
+    bool ok;
+    radius = radiusInput->text().toDouble(&ok);
+    if (!ok || radius <= 0) return;
+
+    QStringList pairs = dartsInput->text().split(";", Qt::SkipEmptyParts);
+    for (const QString &pair : pairs) {
+        QStringList coords = pair.trimmed().split(",");
+        if (coords.size() != 2) return;
+        double x = coords[0].trimmed().toDouble();
+        double y = coords[1].trimmed().toDouble();
+        darts.push_back({x, y});
+    }
+
+    if (darts.empty()) return;
+
+    result = bruteForce(darts, radius);
+    solved = true;
+
+    resultLabel->setText(QString("Max darts: %1 | Center: (%2, %3)")
+        .arg(result.maxDarts)
+        .arg(result.cx, 0, 'f', 2)
+        .arg(result.cy, 0, 'f', 2));
 }

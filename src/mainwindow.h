@@ -5,6 +5,7 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QLabel>
+#include "algorithm.h"
 
 class MainWindow : public QWidget
 {
@@ -15,9 +16,14 @@ private:
     QPushButton *solveButton;
     QLabel *resultLabel;
 
+    std::vector<Point> darts;
+    double radius = 2.0;
+    Result result;
+    bool solved = false;
+
 private slots:
     void onSolve();
-    
+
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
