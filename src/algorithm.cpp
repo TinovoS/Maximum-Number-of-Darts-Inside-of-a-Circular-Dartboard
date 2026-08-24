@@ -93,30 +93,32 @@ Result angularSweep(const std::vector<Point>& darts, double r)
             double angle = std::atan2(dy, dx);
             double delta = std::acos(d / (2.0 * r));
 
-            double enter = angle - delta;
-            double exit = angle + delta;
+            events.push_back({angle - delta, 1});
+            events.push_back({angle + delta, -1});
+        }
 
-            events.push_back({enter, 1});
-            events.push_back({exit, -1});
+        std::sort(events.begin(), events.end(), [](const auto& a, const auto& b) {
+        if (std::abs(a.first - b.first) < 1e-9)
+            return a.second > b.second;
+        return a.first < b.first;
+        });
 
-            if (enter > exit) {
-                events.push_back({-M_PI, 1});
-                events.push_back({M_PI, -1});
+        int count = 1;
+        int maxCount = 1;
+        double bestAngle = 0;
+
+        for (const auto& e : events) {
+            count += e.second;
+            if (count > maxCount) {
+                maxCount = count;
+                bestAngle = e.first;
             }
         }
 
-        std::sort(events.begin(), events.end());
-
-        int count = 1;
-        for (const auto& e : events) {
-            count += e.second;
-            if (count > best.maxDarts) {
-                best.maxDarts = count;
-                // pamti ugao ovde    
-                double angle = e.first;
-                best.cx = darts[i].x + r * std::cos(angle);
-                best.cy = darts[i].y + r * std::sin(angle);
-            }
+        if (maxCount > best.maxDarts) {
+            best.maxDarts = maxCount;
+            best.cx = darts[i].x + r * std::cos(bestAngle);
+            best.cy = darts[i].y + r * std::sin(bestAngle);
         }
     }
 
