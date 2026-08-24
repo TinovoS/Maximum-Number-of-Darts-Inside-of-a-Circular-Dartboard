@@ -5,6 +5,8 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QLabel>
+#include <QTimer>
+
 #include "algorithm.h"
 
 class MainWindow : public QWidget
@@ -21,11 +23,17 @@ private:
     Result result;
     bool solved = false;
 
+    QTimer *animTimer;
+    int sweepIndex = 0;       
+    double sweepAngle = 0.0;  
+    bool animating = false;
+
 protected:
     void paintEvent(QPaintEvent *event) override;
 
 private slots:
     void onSolve();
+    void onAnimStep();
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);

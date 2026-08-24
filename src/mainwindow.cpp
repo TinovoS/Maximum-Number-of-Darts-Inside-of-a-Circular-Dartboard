@@ -2,6 +2,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPainter>
+#include <cmath>
 
 MainWindow::MainWindow(QWidget *parent)
     : QWidget(parent)
@@ -30,6 +31,10 @@ MainWindow::MainWindow(QWidget *parent)
     mainLayout->addWidget(resultLabel);
 
     connect(solveButton, &QPushButton::clicked, this, &MainWindow::onSolve);
+
+    animTimer = new QTimer(this);
+    connect(animTimer, &QTimer::timeout, this, &MainWindow::onAnimStep);
+
 }
 
 MainWindow::~MainWindow() {}
@@ -63,6 +68,11 @@ void MainWindow::onSolve()
         .arg(result.cy, 0, 'f', 2));
         
     update();
+
+    sweepIndex = 0;
+    sweepAngle = -M_PI;
+    animating = true;
+    animTimer->start(50);
 }
 
 void MainWindow::paintEvent(QPaintEvent *)
@@ -123,4 +133,62 @@ void MainWindow::paintEvent(QPaintEvent *)
         }
         painter.drawEllipse(QPointF(sx, sy), 5, 5);
     }
+
+    if (animating && sweepIndex < n) {
+        double pivotX = offsetX + darts[sweepIndex].x * scale;
+        double pivotY = offsetY - darts[sweepIndex].y * scale;
+
+        painter.setPen(QPen(Qt::yellow, 3));
+        painter.setBrush(Qt::yellow);
+        painter.drawEllipse(QPointF(pivotX, pivotY), 7, 7);
+
+        double animCx = darts[sweepIndex].x + radius * std::cos(sweepAngle);
+        double animCy = darts[sweepIndex].y + radius * std::sin(sweepAngle);
+        double asx = offsetX + animCx * scale;
+        double asy = offsetY - animCy * scale;
+
+        painter.setPen(QPen(QColor(255, 165, 0), 2, Qt::DashLine));
+        painter.setBrush(Qt::NoBrush);
+        painter.drawEllipse(QPointF(asx, asy), circleScreenR, circleScreenR);
+
+        int animCount = 0;
+        for (int j = 0; j < n; ++j) {
+            double dx = darts[j].x - animCx;
+            double dy = darts[j].y - animCy;
+            if (dx * dx + dy * dy <= radius * radius + 1e-6) {
+                double sx2 = offsetX + darts[j].x * scale;
+                double sy2 = offsetY - darts[j].y * scale;
+                painter.setPen(QPen(QColor(0, 100, 255), 2));
+                painter.setBrush(QColor(0, 100, 255));
+                painter.drawEllipse(QPointF(sx2, sy2), 5, 5);
+                ++animCount;
+            }
+        }
+
+        painter.setPen(Qt::black);
+        QFont font = painter.font();
+        font.setPointSize(12);
+        font.setBold(true);
+        painter.setFont(font);
+        painter.drawText(drawArea.right() - 160, drawArea.top() + 25,
+                         QString("Point: %1/%2").arg(sweepIndex + 1).arg(n));
+        painter.drawText(drawArea.right() - 160, drawArea.top() + 50,
+                         QString("Current: %1").arg(animCount));
+        painter.drawText(drawArea.right() - 160, drawArea.top() + 75,
+                         QString("Best: %1").arg(result.maxDarts));
+    }
+}
+
+void MainWindow::onAnimStep()
+{
+    sweepAngle += 0.03;
+    if (sweepAngle > M_PI) {
+        sweepAngle = -M_PI;
+        sweepIndex++;
+        if (sweepIndex >= static_cast<int>(darts.size())) {
+            animTimer->stop();
+            animating = false;
+        }
+    }
+    update();
 }
