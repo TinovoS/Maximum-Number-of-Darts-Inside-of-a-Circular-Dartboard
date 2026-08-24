@@ -132,3 +132,35 @@ Result angularSweep(const std::vector<Point>& darts, double r)
     }
     return best;
 }
+
+std::vector<std::vector<SweepEvent>> getSweepEvents(const std::vector<Point>& darts, double r)
+{
+    int n = static_cast<int>(darts.size());
+    std::vector<std::vector<SweepEvent>> allEvents(n);
+
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            if (i == j) continue;
+            double dx = darts[j].x - darts[i].x;
+            double dy = darts[j].y - darts[i].y;
+            double d = std::sqrt(dx * dx + dy * dy);
+
+            if (d > 2.0 * r) continue;
+
+            double angle = std::atan2(dy, dx);
+            double delta = std::acos(d / (2.0 * r));
+
+            allEvents[i].push_back({i, angle - delta, 1, j});
+            allEvents[i].push_back({i, angle + delta, -1, j});
+        }
+
+        std::sort(allEvents[i].begin(), allEvents[i].end(),
+            [](const SweepEvent& a, const SweepEvent& b) {
+                if (std::abs(a.angle - b.angle) < 1e-9)
+                    return a.type > b.type;
+                return a.angle < b.angle;
+            });
+    }
+
+    return allEvents;
+}

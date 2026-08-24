@@ -24,9 +24,12 @@ private:
     bool solved = false;
 
     QTimer *animTimer;
-    int sweepIndex = 0;       
-    double sweepAngle = 0.0;  
+    int sweepIndex = 0;
+    int eventIndex = 0;
+    double sweepAngle = 0.0;
     bool animating = false;
+    std::vector<std::vector<SweepEvent>> sweepEvents;
+    int animCount = 0;
 
 protected:
     void paintEvent(QPaintEvent *event) override;

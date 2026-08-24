@@ -24,7 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     solveButton = new QPushButton("Solve");
     inputLayout->addWidget(solveButton);
-    
+
     mainLayout->addLayout(inputLayout);
 
     resultLabel = new QLabel("Enter darts and radius, then click Solve.");
@@ -69,10 +69,14 @@ void MainWindow::onSolve()
         
     update();
 
+    animTimer->stop();
+    sweepEvents = getSweepEvents(darts, radius);
     sweepIndex = 0;
+    eventIndex = 0;
     sweepAngle = -M_PI;
+    animCount = 1;
     animating = true;
-    animTimer->start(50);
+    animTimer->start(800);
 }
 
 void MainWindow::paintEvent(QPaintEvent *)
@@ -132,6 +136,10 @@ void MainWindow::paintEvent(QPaintEvent *)
             painter.setBrush(QColor(200, 0, 0));
         }
         painter.drawEllipse(QPointF(sx, sy), 5, 5);
+
+        painter.setPen(Qt::black);
+        painter.drawText(QPointF(sx + 7, sy - 3),
+                         QString("(%1,%2)").arg(darts[i].x, 0, 'f', 0).arg(darts[i].y, 0, 'f', 0));
     }
 
     if (animating && sweepIndex < n) {
@@ -151,7 +159,6 @@ void MainWindow::paintEvent(QPaintEvent *)
         painter.setBrush(Qt::NoBrush);
         painter.drawEllipse(QPointF(asx, asy), circleScreenR, circleScreenR);
 
-        int animCount = 0;
         for (int j = 0; j < n; ++j) {
             double dx = darts[j].x - animCx;
             double dy = darts[j].y - animCy;
@@ -161,7 +168,6 @@ void MainWindow::paintEvent(QPaintEvent *)
                 painter.setPen(QPen(QColor(0, 100, 255), 2));
                 painter.setBrush(QColor(0, 100, 255));
                 painter.drawEllipse(QPointF(sx2, sy2), 5, 5);
-                ++animCount;
             }
         }
 
@@ -181,14 +187,27 @@ void MainWindow::paintEvent(QPaintEvent *)
 
 void MainWindow::onAnimStep()
 {
-    sweepAngle += 0.03;
-    if (sweepAngle > M_PI) {
-        sweepAngle = -M_PI;
-        sweepIndex++;
-        if (sweepIndex >= static_cast<int>(darts.size())) {
-            animTimer->stop();
-            animating = false;
-        }
+    int n = static_cast<int>(darts.size());
+
+    if (sweepIndex >= n) {
+        animTimer->stop();
+        animating = false;
+        update();
+        return;
     }
+
+    auto& events = sweepEvents[sweepIndex];
+
+    if (eventIndex < static_cast<int>(events.size())) {
+        sweepAngle = events[eventIndex].angle;
+        animCount += events[eventIndex].type;
+        eventIndex++;
+    } else {
+        sweepIndex++;
+        eventIndex = 0;
+        animCount = 1;
+        sweepAngle = -M_PI;
+    }
+
     update();
 }
