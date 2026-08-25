@@ -16,6 +16,7 @@ private:
     QLineEdit *dartsInput;
     QLineEdit *radiusInput;
     QPushButton *solveButton;
+    QPushButton *resetButton;
     QLabel *resultLabel;
 
     std::vector<Point> darts;
@@ -36,6 +37,7 @@ protected:
 
 private slots:
     void onSolve();
+    void onReset();
     void onAnimStep();
 
 public:

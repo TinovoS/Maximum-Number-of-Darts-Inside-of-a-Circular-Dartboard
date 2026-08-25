@@ -25,12 +25,16 @@ MainWindow::MainWindow(QWidget *parent)
     solveButton = new QPushButton("Solve");
     inputLayout->addWidget(solveButton);
 
+    resetButton = new QPushButton("Reset");
+    inputLayout->addWidget(resetButton);
+
     mainLayout->addLayout(inputLayout);
 
     resultLabel = new QLabel("Enter darts and radius, then click Solve.");
     mainLayout->addWidget(resultLabel);
 
     connect(solveButton, &QPushButton::clicked, this, &MainWindow::onSolve);
+    connect(resetButton, &QPushButton::clicked, this, &MainWindow::onReset);
 
     animTimer = new QTimer(this);
     connect(animTimer, &QTimer::timeout, this, &MainWindow::onAnimStep);
@@ -59,7 +63,7 @@ void MainWindow::onSolve()
 
     if (darts.empty()) return;
 
-    result = angularSweep(darts, radius);
+    result = angularSweep(darts, radius, &sweepEvents);
     solved = true;
 
     resultLabel->setText(QString("Max darts: %1 | Center: (%2, %3)")
@@ -70,7 +74,6 @@ void MainWindow::onSolve()
     update();
 
     animTimer->stop();
-    sweepEvents = getSweepEvents(darts, radius);
     sweepIndex = 0;
     eventIndex = 0;
     sweepAngle = -M_PI;
@@ -115,6 +118,40 @@ void MainWindow::paintEvent(QPaintEvent *)
     double offsetY = drawArea.top() + (drawArea.height() + rangeY * scale) / 2.0 + minY * scale;
 
     painter.setClipRect(drawArea);
+
+    painter.setPen(QPen(QColor(220, 220, 220), 1));
+    int gridMinX = static_cast<int>(std::floor(minX));
+    int gridMaxX = static_cast<int>(std::ceil(maxX));
+    int gridMinY = static_cast<int>(std::floor(minY));
+    int gridMaxY = static_cast<int>(std::ceil(maxY));
+
+    for (int gx = gridMinX; gx <= gridMaxX; ++gx) {
+        double sx = offsetX + gx * scale;
+        painter.drawLine(QPointF(sx, drawArea.top()), QPointF(sx, drawArea.bottom()));
+    }
+    for (int gy = gridMinY; gy <= gridMaxY; ++gy) {
+        double sy = offsetY - gy * scale;
+        painter.drawLine(QPointF(drawArea.left(), sy), QPointF(drawArea.right(), sy));
+    }
+
+    painter.setPen(QPen(Qt::black, 2));
+    painter.drawLine(QPointF(drawArea.left(), offsetY), QPointF(drawArea.right(), offsetY));
+    painter.drawLine(QPointF(offsetX, drawArea.top()), QPointF(offsetX, drawArea.bottom()));
+
+    painter.setPen(Qt::black);
+    QFont gridFont = painter.font();
+    gridFont.setPointSize(7);
+    painter.setFont(gridFont);
+    for (int gx = gridMinX; gx <= gridMaxX; ++gx) {
+        if (gx == 0) continue;
+        double sx = offsetX + gx * scale;
+        painter.drawText(QPointF(sx - 5, offsetY + 12), QString::number(gx));
+    }
+    for (int gy = gridMinY; gy <= gridMaxY; ++gy) {
+        if (gy == 0) continue;
+        double sy = offsetY - gy * scale;
+        painter.drawText(QPointF(offsetX + 4, sy + 4), QString::number(gy));
+    }
 
     painter.setPen(QPen(QColor(30, 100, 220), 2));
     painter.setBrush(QBrush(QColor(30, 100, 220, 30)));
@@ -183,6 +220,16 @@ void MainWindow::paintEvent(QPaintEvent *)
         painter.drawText(drawArea.right() - 160, drawArea.top() + 75,
                          QString("Best: %1").arg(result.maxDarts));
     }
+}
+
+void MainWindow::onReset()
+{
+    animTimer->stop();
+    animating = false;
+    solved = false;
+    darts.clear();
+    resultLabel->setText("Enter darts and radius, then click Solve.");
+    update();
 }
 
 void MainWindow::onAnimStep()
